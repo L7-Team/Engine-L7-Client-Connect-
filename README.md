@@ -1,151 +1,104 @@
 Engine L7 Aurora
 
 Este não é um produto oficialmente suportado pelo Aurora Play ou Playside Studio.
-Introdução
 
-Engine L7 Aurora é uma reimplementação nativa de alto desempenho (C++/JNI) da API ClientConnect para o ecossistema Aurora Play, desenvolvida de forma independente pela Equipe L7TEAM / Stpremy.
+Visão Geral do Projeto
 
-Esta nova versão foi criada para substituir a implementação original em Java, com foco total em segurança avançada, eliminação de vazamentos de credenciais no armazenamento local e suporte completo a múltiplas interfaces de rede.
+A Engine L7 Aurora é uma solução nativa de alto desempenho desenvolvida de forma independente pela Equipe L7 / Stpremy para o ecossistema Aurora Play.
 
-Recursos em Destaque
+Esta arquitetura foi projetada para substituir completamente as implementações tradicionais em Java, transferindo toda a carga crítica de processamento, gestão de rede, validação de tokens e controle de sessão diretamente para a camada nativa em C++ (nível de sistema / baixo nível).
 
- Core Nativo em C++: Lógica de autenticação, parsing e gerenciamento de sessão isolados na biblioteca nativa libL7API.so.
+Com isso, o projeto elimina a necessidade de depender de códigos extensos em Java dentro da sua aplicação, garantindo máxima segurança contra análise reversa, zero persistência de dados em arquivos locais e estabilidade total em qualquer ambiente de rede.
+
+Principais Recursos e Diferenciais
+
+ Arquitetura 100% Nativa em C++: Toda a lógica de comunicação, controle de sessão, parsing e segurança roda diretamente através da biblioteca pré-compilada libL7API.so.
  
- Sessão Volátil (In-Memory Cache): Tokens e credenciais ficam salvos apenas na memória RAM do dispositivo. Isso impede a leitura por Root ou a extração de dados salvos em arquivos locais.
+ Zero Código Java Exposto: Não é necessário implementar diversas classes Java nem expor fluxos de autenticação em código de alto nível. Toda a inteligência reside na biblioteca nativa.
  
- Suporte Completo a Redes: Correção definitiva dos problemas de conectividade. A biblioteca funciona nativamente em Wi-Fi, redes móveis (3G, 4G, 5G), Ethernet e conexões VPN.
+ Sessão Volátil em Memória RAM: Credenciais, tokens e informações de usuário nunca são salvos no armazenamento interno (SharedPreferences ou arquivos locais). Os dados existem apenas na memória RAM enquanto o processo estiver em execução, blindando a aplicação contra leitura via Root ou extração local.
  
- URLs Ofuscadas: Endpoints e rotas sensíveis são codificados em Base64 para evitar a inspeção simples de tráfego.
- * Logs de Produção Desativados: Os logs de depuração do sistema são desativados automaticamente em compilações finais de produção.
+ Injeção Dinâmica de Recursos: O motor nativo gerencia a integração diretamente no processo do aplicativo, permitindo obter e manipular os dados de sessão com chamadas simples e minimalistas.
  
-Downloads e Arquivos do Projeto
-
-O GitHub é a única fonte oficial para obter informações, atualizações e downloads verificados da Engine L7 Aurora.
-
-Na seção de Releases / Download Mais Recente, você encontrará o arquivo zipado com todo o pacote necessário para a integração no seu aplicativo.
-
-Conteúdo do Pacote ZIP
-
-Ao baixar o arquivo .zip da release mais recente e descompactá-lo, você encontrará a seguinte estrutura:
-
- lib/arm64-v8a/libL7API.so: Biblioteca C++ nativa pré-compilada.
+ Compatibilidade Multirrede Definitiva: Correção completa de falhas de conexão. Funciona perfeitamente em redes Wi-Fi, Dados Móveis (3G, 4G, 5G), conexões cabeadas (Ethernet) e redes privadas (VPN).
  
- EngineL7Aurora.java: Classe ponte em Java pronta para ser adicionada ao seu projeto.
+ Ofuscação de Endpoints: URLs e rotas de comunicação são codificadas em Base64 internamente na camada C++, impedindo inspeção simples de tráfego.
  
- AndroidManifest_snippet.xml: Trecho com as permissões e a tag da Activity com o Deep Link para colocar no manifesto do seu app.
+ Logs de Produção Desativados: Remoção automática de saídas de depuração em compilações finais, garantindo total privacidade e performance.
  
- TUTORIAL_IMPLEMENTACAO.txt: Guia passo a passo em texto explicando como configurar tudo, importar as bibliotecas e realizar as chamadas do método dentro do seu projeto (compatível com Android Studio e Sketchware).
+Estrutura do Pacote de Distribuição (.zip)
+
+Ao realizar o download do pacote oficial da versão mais recente na seção de Releases do repositório, você receberá um arquivo .zip contendo os recursos necessários para a integração.
+
+Conteúdo do Arquivo ZIP
+
+ lib/arm64-v8a/libL7API.so: Biblioteca C++ pré-compilada contendo todo o motor de baixo nível.
  
-O que mudou no Projeto
-
-Como funcionava antes
-
-A versão oficial em Java dependia de 5 classes inteiras para realizar o fluxo de login. Ela salvava o token de autenticação em um arquivo SharedPreferences gravado diretamente no armazenamento do celular (o que permitia que usuários com acesso Root modificassem o token), mantinha URLs e rotas visíveis em texto claro, e apresentava falhas frequentes ao tentar autenticar usando redes móveis ou conexões via cabo. Além disso, gerava logs detalhados de sistema a todo momento.
-
-Como funciona agora
-
-Toda a lógica pesada de rede, processamento, validação e cache foi transferida para a biblioteca nativa libL7API.so em C++. O Java agora é apenas uma classe ouvinte (ponte) de poucas linhas que recebe o redirecionamento da Intent do Android. O token de sessão não é salvo no disco do aparelho, permanecendo exclusivamente na memória RAM enquanto a aplicação estiver em execução. As conexões funcionam sem quedas ou bugs em Wi-Fi, dados móveis e VPN, com URLs ofuscadas e logs desligados na versão final.
-
-Estrutura e Fluxo de Execução
-
-O seu aplicativo faz a chamada de login chamando a classe ponte Java.
-
- A camada nativa C++ abre o navegador no site do Aurora Play.
+ AndroidManifest_snippet.xml: Trecho de código do manifesto contendo as permissões de rede e a declaração da Activity/Deep Link necessária para o retorno da autenticação.
  
- O usuário realiza a autenticação e o site redireciona para a URL do Deep Link (auroraplay login-success?token=...).
+ TUTORIAL_IMPLEMENTACAO.txt: Guia oficial passo a passo explicando onde posicionar a biblioteca nativa no seu projeto, como configurar o manifesto e como realizar a chamada mínima para consumir as informações da Engine.
  
- A Activity do seu app recebe a URI de retorno e repassa os dados para a ponte.
+Como Funciona a Integração
+
+A proposta da Engine L7 Aurora é oferecer uma integração ultrassimples e limpa para o desenvolvedor:
+
+ Inclusão da Biblioteca Nativa: Basta copiar a biblioteca libL7API.so para a pasta de bibliotecas nativas (jniLibs ou diretório correspondente) do seu ambiente de desenvolvimento (Android Studio, Sketchware, etc.).
  
- A biblioteca libL7API.so faz o parse nativo, valida o token e armazena os dados de sessão na memória RAM.
+ Configuração do AndroidManifest: Adicione as permissões de rede e a tag do Deep Link no seu manifesto, conforme o modelo fornecido no arquivo AndroidManifest_snippet.xml.
  
- Seu aplicativo consulta as informações de usuário (como e-mail, token e estado da rede) diretamente na memória.
+ Execução em Baixo Nível: Ao inicializar o motor nativo, a libL7API.so assume o controle das chamadas. Toda a troca de dados, verificação de conectividade e validação de token é tratada diretamente pela linguagem de baixo nível.
+ 
+ Consumo de Dados: Siga as orientações contidas dentro do arquivo TUTORIAL_IMPLEMENTACAO.txt para consultar o status da sessão, e-mail, token e estado de rede do usuário e vinculá-los à sua própria lógica comercial ou banco de dados.
  
 Requisitos do Sistema
 
  Versão Mínima do Android: Android 7.0 (API Level 24) ou superior.
  
  Arquiteturas Suportadas: arm64-v8a.
- Permissões Necessárias:
+ 
+ Permissões de Sistema Necessárias:
  
    android.permission.INTERNET
+   
    android.permission.ACCESS_NETWORK_STATE
    
-Como Implementar
+Política do Código e Distribuição
 
-Não é necessário escrever códigos complexos manualmente do zero. Basta baixar o arquivo .zip disponível na seção de Downloads do repositório, extrair o conteúdo e abrir o arquivo TUTORIAL_IMPLEMENTACAO.txt.
-
-Dentro do arquivo .txt, você encontrará as instruções exatas de:
-
- Onde colar o arquivo EngineL7Aurora.java.
+ Código Proprietário e Fechado: 
  
- Onde posicionar a pasta de bibliotecas nativas (libL7API.so).
+ A biblioteca nativa libL7API.so é distribuída em formato pré-compilado. Ela utiliza motores internos e rotinas proprietárias desenvolvidas pela Equipe L7 / Stpremy, não sendo de código aberto.
  
- Como copiar o snippet do AndroidManifest.xml.
+ Uso Livre para Desenvolvedores: O pacote foi projetado como uma ferramenta para a comunidade. Você pode utilizar a biblioteca compilada para criar suas próprias lógicas, validar acessos, integrar com seus servidores ou gerenciar usuários do seu aplicativo de forma totalmente livre.
  
- Como fazer o tratamento do Deep Link no evento de carregamento da sua MainActivity.
+Relatórios de Erros e Suporte
+
+Para garantir a melhoria contínua da Engine, os relatórios de falhas devem ser enviados contendo os seguintes dados:
+ * Erros de Compilação/Build: Envie o arquivo de log gerado pela sua IDE ou ambiente de compilação.
  
-Política do Código e Módulos
-
- Código Aberto: O arquivo ponte Java (EngineL7Aurora.java), arquivos de manifesto, documentação e tutoriais.
+ Erros de Execução (Crash/Encerrado): Envie o logcat capturado no momento exato do encerramento da aplicação.
  
- Código Proprietário: A biblioteca nativa compilada libL7API.so.
+ Erros de Conectividade: Informe a versão do Android do dispositivo de teste e a interface de rede utilizada (Wi-Fi, Dados Móveis ou VPN).
  
-> Nota: 
+Canais Oficiais e Apoio ao Projeto
 
-O arquivo .so contém bibliotecas e engines internas desenvolvidas pela Equipe L7 / Stpremy que são reaproveitadas em outros softwares da equipe, motivo pelo qual o código C++ é distribuído pré-compilado. 
+Desenvolver, otimizar e manter uma infraestrutura em código nativo exige dedicação contínua. Se esta Engine contribui para o seu aplicativo ou projeto, considere apoiar a equipe de desenvolvimento:
 
-A ponte Java permanece aberta para inspeção e fácil inclusão no seu projeto.
-
-> 
-
-Relatórios de Erros
-Para manter a estabilidade do projeto, 
-
-aceitamos relatórios de falhas com os seguintes requisitos:
-
- Erros de Instalação/Compilação: Envie o arquivo de log do Build do seu ambiente ou do Android Studio/Sketchware.
+ Chave PIX: 
  
- Erros de Execução/Crash: Grave e envie o logcat capturado exatamente no momento do encerramento inesperado.
+ fd31af15-8a20-4e0b-9fdd-e0d8255d151a
  
- Erros de Conexão: Informe o tipo de rede utilizada (Dados Móveis, Wi-Fi, VPN) e a versão do Android do aparelho testado.
- 
-Apoie o Projeto
-
-Desenvolver e otimizar essa biblioteca nativa exige tempo, testes e manutenção contínua. Se este projeto ajuda na sua aplicação ou comunidade, considere apoiar o trabalho do desenvolvedor:
-
- Chave PIX: fd31af15-8a20-4e0b-9fdd-e0d8255d151a
- 
- Comunidade no WhatsApp: Grupo de Suporte Sketchware e Desenvolvedores
+ Grupo Oficial de Suporte no WhatsApp: 
  
  https://chat.whatsapp.com/H6r7dCiVzin4lIh3513LXk?s=cl&p=a&mlu=4&ilr=4
- 
-Aviso Legal
+Aviso Legal e Licença
 
-Este projeto é uma reimplementação independente feita com o objetivo de colaborar com a comunidade e resolver falhas de desempenho da versão Java anterior.
+Este projeto é uma reimplementação nativa independente desenvolvida pela Equipe L7 / Stpremy com o intuito de resolver limitações técnicas de desempenho e segurança da API original do Aurora Play.
 
-Se o proprietário dos direitos da plataforma Aurora Play ou Playside Studio desejar a alteração ou remoção deste repositório, basta entrar em contato para que a remoção ou adequação seja realizada imediatamente.
+Caso os detentores dos direitos da plataforma Aurora Play ou Playside Studio solicitem adequações ou a remoção do repositório, as medidas necessárias serão tomadas prontamente.
 
  API Original: Playside Studio
  
- Reescrita Nativa (C++/JNI): 
+ Reescrita e Engine Nativa (C++/JNI): Equipe L7 / Stpremy
  
- Equipe L7 / Stpremy
+ Copyright (C) 2026 Equipe L7 / Stpremy
  
-Licença
-A documentação, tutoriais e o código aberto da ponte Java deste projeto são software livre: 
-
-você pode redistribuí-los e/ou modificá-los sob os termos da GNU General Public License (GPLv3) conforme publicada pela Free Software Foundation, seja a versão 3 da Licença ou (a seu critério) qualquer versão posterior.
-
-Engine L7 Aurora - ClientConnect Nativo
-Copyright (C) 2026 Equipe L7 / Stpremy
-
-Este programa é distribuído na expectativa de que seja útil,
-
-mas SEM QUALQUER GARANTIA; 
-
-sem mesmo a garantia implícita de
-COMERCIABILIDADE ou ADEQUAÇÃO A UM DETERMINADO PROPÓSITO. Veja a
-GNU General Public License para obter mais detalhes.
-
-Você deve ter recebido uma cópia da Licença Pública Geral GNU
-junto com este programa. Se não, consulte <http://www.gnu.org/licenses/>.
